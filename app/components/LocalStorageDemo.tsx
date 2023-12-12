@@ -1,7 +1,14 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 
 const useHandleResize = () => {
   const [isWidthSmaller, setIsWidthSmaller] = useState<boolean>();
@@ -15,7 +22,13 @@ const useHandleResize = () => {
   return isWidthSmaller;
 };
 
-export default function LocalStorageDemo() {
+interface LocalStorageDemoProps {
+  setLoginToken: Dispatch<SetStateAction<string>>;
+}
+
+const LocalStorageDemo: React.FC<LocalStorageDemoProps> = ({
+  setLoginToken,
+}) => {
   const initialRender = useRef(true);
   const isWidthSmaller = useHandleResize();
 
@@ -66,7 +79,7 @@ export default function LocalStorageDemo() {
     <div className="bg-slate-100 w-[100dvw] h-[100dvh] flex items-center justify-center p-8">
       <div
         className={`${
-          isWidthSmaller ? "w-full h-full" : "max-w-[26rem] h-[30rem]"
+          isWidthSmaller ? "w-full h-full" : "max-w-[26rem] max-h-[32rem]"
         } sm:w-full md:w-[26rem] bg-slate-50  rounded-3xl border-[0.1rem] border-slate-300 p-5 flex flex-col flex-grow gap-4`}>
         <div className="w-full h-max flex gap-4 m-0 p-0">
           <input
@@ -120,6 +133,14 @@ export default function LocalStorageDemo() {
             ))}
         </div>
       </div>
+      <button
+        ref={addBtnRef}
+        className="px-4 py-3 bg-red-500 hover:bg-red-600 rounded-xl text-white font-semibold transition-colors absolute top-0 right-0 my-4 mx-4"
+        onClick={() => setLoginToken("")}>
+        Logout
+      </button>
     </div>
   );
-}
+};
+
+export default LocalStorageDemo;

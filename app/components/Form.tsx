@@ -87,16 +87,29 @@ const Form: React.FC<FormProps> = ({
                     : false
                 }
                 required={true}
-                onKeyDown={(e) =>
-                  e.key === "Enter"
-                    ? mode === "signup" && inp.type === "username"
-                      ? emailRef.current?.focus()
-                      : mode !== "forgotpwd" && inp.type === "email"
-                      ? pwdRef.current?.focus()
-                      : mode === "forgotpwd" || inp.type === "username"
-                      ? submitRef.current?.click()
+                onKeyDown={
+                  (e) =>
+                    // {
+                    e.key === "Enter"
+                      ? mode === "signup" && inp.type === "username"
+                        ? emailRef.current?.focus()
+                        : (mode === "signup" && inp.type === "email") ||
+                          (mode === "login" && inp.type === "username")
+                        ? pwdRef.current?.focus()
+                        : submitRef.current?.click()
                       : null
-                    : null
+
+                  // if (e.key === "Enter") {
+                  //   if (mode === "signup" && inp.type === "username")
+                  //     emailRef.current?.focus();
+                  //   else if (
+                  //     (mode === "signup" && inp.type === "email") ||
+                  //     (mode === "login" && inp.type === "username")
+                  //   )
+                  //     pwdRef.current?.focus();
+                  //   else submitRef.current?.click();
+                  // }
+                  // }
                 }
               />
               {inp.endIcon && (

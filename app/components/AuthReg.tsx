@@ -1,6 +1,14 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import SocialsBtns from "./SocialsBtns";
 import Form from "./Form";
 import { Toaster, toast } from "sonner";
@@ -17,9 +25,32 @@ const useHandleResize = () => {
   return isWidthSmaller;
 };
 
-export default function AuthReg() {
-  const isWidthSmaller = useHandleResize();
+interface AuthRegProps {
+  setLoginToken: Dispatch<SetStateAction<string>>;
+}
 
+const AuthReg: React.FC<AuthRegProps> = ({ setLoginToken }) => {
+  // const initialRender = useRef(true);
+
+  // const [loginToken, setLoginToken] = useState<string>("");
+
+  // useEffect(() => {
+  //   if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+  //     const storedLoginToken = localStorage.getItem("loginToken");
+  //     setLoginToken(storedLoginToken ?? loginToken);
+  //   }
+  // }, []);
+
+  // useEffect(() => {
+  //   if (initialRender.current) {
+  //     initialRender.current = false;
+  //     return;
+  //   }
+  //   if (typeof window !== "undefined" && typeof localStorage !== "undefined")
+  //     localStorage.setItem("loginToken", loginToken);
+  // }, [loginToken]);
+
+  const isWidthSmaller = useHandleResize();
   const [mode, setMode] = useState<string>("login");
 
   const userNameRef = useRef<HTMLInputElement>(null);
@@ -39,85 +70,149 @@ export default function AuthReg() {
     usernameOrEmail: string,
     password: string
   ): Promise<PromiseResponse> => {
-    return { success: true };
+    console.log(usernameOrEmail);
+    return new Promise(async (resolve, reject) => {
+      try {
+        const loginResponse = await fetch(
+          "https://localhost:7169/api/Auth/login",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              username: usernameOrEmail,
+              password,
+            }),
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        const responseText = await loginResponse.text();
+        console.log("Raw Response Text:", responseText);
+        if (loginResponse.ok) {
+          setLoginToken(responseText);
+          resolve({ success: true });
+        } else
+          reject({
+            success: false,
+            message: responseText || "Unknown error",
+          });
+      } catch (error) {
+        reject({
+          success: false,
+          message: "Oops! Something went wrong, please try again.",
+        });
+      }
+    });
   };
 
-  const handleBasicReg = async (
+  const handleBasicReg = (
     username: string,
     email: string,
     password: string
   ): Promise<PromiseResponse> => {
-    console.log(username, typeof username);
-    try {
-      const signupResponse = await fetch(
-        "https://localhost:7169/api/Auth/register",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            username: username,
-            password: password,
-          }),
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-      console.log("Server Response:", await signupResponse.text()); // Log the response text
-      if (signupResponse.ok) {
-        console.log("Account created.");
-        return { success: true };
-      } else {
-        const errorData = await signupResponse.json();
-        console.log("Failure: ", errorData);
-        return {
-          success: false,
-          message: errorData.message || "Unknown error",
-        };
+    return new Promise(async (resolve, reject) => {
+      try {
+        const signupResponse = await fetch(
+          "https://localhost:7169/api/Auth/register",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              username,
+              password,
+            }),
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        const responseText = await signupResponse.text();
+        console.log("Raw Response Text:", responseText);
+        if (signupResponse.ok) resolve({ success: true });
+        else
+          reject({
+            success: false,
+            message: responseText || "Unknown error",
+          });
+      } catch (error) {
+        reject({ success: false, message: "An error occurred during signup." });
       }
-    } catch (error) {
-      console.error("Error during fetch:", error);
-      return { success: false, message: "An error occurred during signup." };
-    }
+    });
   };
 
-  const handleForgotPwd = (email: string) => {};
+  const handleForgotPwd = (email: string): Promise<PromiseResponse> => {
+    return new Promise((resolve, _) =>
+      setTimeout(() => resolve({ success: true }), 3000)
+    );
+  };
 
   const createToast = (
-    callback: (...args: any[]) => Promise<PromiseResponse>,
-    params: any[],
+    type: string,
     loadingMessage: string,
-    successMessage: string,
-    errorMessage: string
+    message: string,
+    errorMessage?: string,
+    callback?: (...args: any[]) => Promise<PromiseResponse>,
+    params?: any[]
   ) => {
-    toast.promise(callback(...params), {
-      loading: loadingMessage,
-      success: successMessage,
-      error: errorMessage,
-    });
+    switch (type) {
+      case "warning":
+        toast.warning(message);
+        break;
+      case "error":
+        toast.error(message);
+        break;
+      case "promise":
+        toast.promise(
+          async () => {
+            const response = await callback!(...params!);
+            return response;
+          },
+          {
+            loading: loadingMessage,
+            success: (response: PromiseResponse) => {
+              if (response.success) {
+                return message;
+              }
+            },
+            error: (error: Error & { message?: string }) => {
+              return error.message || errorMessage;
+            },
+          }
+        );
+        break;
+      default:
+        toast(message);
+    }
   };
 
   const handleSubmit = () => {
     const username = userNameRef.current?.value.trim();
     const email = emailRef.current?.value.trim();
     const password = pwdRef.current?.value.trim();
-    let response: PromiseResponse;
 
     if (mode === "login" && username && password)
       createToast(
-        handleBasicReg,
-        [username, email, password],
-        "Creating account, please wait...",
-        "Welcome aboard!",
-        "Failed to create your account, please try again."
+        "promise",
+        "Logging in, please wait...",
+        "Welcome back!",
+        "Failed to log in, please try again.",
+        handleBasicAuth,
+        [username, password]
       );
-    // handleBasicAuth(username, password);
     else if (mode === "signup" && username && email && password) {
       createToast(
-        handleBasicReg,
-        [username, email, password],
+        "promise",
         "Creating account, please wait...",
         "Welcome aboard!",
-        "Failed to create your account, please try again."
+        "Failed to create your account, please try again.",
+        handleBasicReg,
+        [username, email, password]
       );
-    } else if (mode === "forgotpwd" && email) handleForgotPwd(email);
+    } else if (mode === "forgotpwd" && email) {
+      createToast(
+        "promise",
+        "Sending password reset link on your email, please wait...",
+        "Password reset link sent! Please check your email inbox.",
+        "Failed to send OTP, please try again.",
+        handleForgotPwd,
+        [email]
+      );
+    }
   };
 
   const switchLoginSigup = () =>
@@ -185,7 +280,6 @@ export default function AuthReg() {
         )}
         <button
           ref={submitRef}
-          // type="submit"
           type="button"
           className="btn btn-primary bg-green-500 border-none rounded-xl text-white mt-6 hover:bg-green-500"
           onClick={handleSubmit}>
@@ -223,4 +317,6 @@ export default function AuthReg() {
       </form>
     </div>
   );
-}
+};
+
+export default AuthReg;

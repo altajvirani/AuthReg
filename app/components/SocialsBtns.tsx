@@ -26,7 +26,7 @@ const SocialsBtns: React.FC<SocialsBtnsProps> = ({ mode }) => {
         <button
           type="button"
           key={index}
-          className="btn btn-primary bg-white flex flex-grow items-center justify-center border-[0.05rem] border-md rounded-xl border-slate-400 px-5 py-3 transition-all hover:shadow-[0_0_2rem_-0.2rem_rgba(0,0,0,0.2)] hover:bg-white hover:border-slate-400 active:shadow-none">
+          className="btn btn-primary bg-white flex flex-grow items-center justify-center border-[0.05rem] border-md rounded-xl border-slate-400 px-5 py-3 transition-all hover:scale-[1.025] hover:shadow-[0_0_2rem_-0.2rem_rgba(0,0,0,0.15)] hover:bg-white hover:border-slate-400 active:shadow-none">
           {socialBtn.svgComp}
         </button>
       ))}
