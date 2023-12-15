@@ -77,7 +77,9 @@ const Form: React.FC<FormProps> = ({
                     : "text"
                 }
                 placeholder={`Enter your ${
-                  inp.type === "username" ? inp.type + " or email" : inp.type
+                  inp.type === "username" && mode === "login"
+                    ? inp.type + " or email"
+                    : inp.type
                 }`}
                 autoFocus={
                   ((mode === "login" || mode === "forgotpwd") &&
