@@ -4,7 +4,6 @@
 import React, {
   Dispatch,
   SetStateAction,
-  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -26,30 +25,14 @@ const useHandleResize = () => {
 };
 
 interface AuthRegProps {
-  setLoginToken: Dispatch<SetStateAction<string>>;
+  setLoginToken: Dispatch<SetStateAction<string | null>>;
+  setSaveLoginInfo: Dispatch<SetStateAction<boolean>>;
 }
 
-const AuthReg: React.FC<AuthRegProps> = ({ setLoginToken }) => {
-  // const initialRender = useRef(true);
-
-  // const [loginToken, setLoginToken] = useState<string>("");
-
-  // useEffect(() => {
-  //   if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
-  //     const storedLoginToken = localStorage.getItem("loginToken");
-  //     setLoginToken(storedLoginToken ?? loginToken);
-  //   }
-  // }, []);
-
-  // useEffect(() => {
-  //   if (initialRender.current) {
-  //     initialRender.current = false;
-  //     return;
-  //   }
-  //   if (typeof window !== "undefined" && typeof localStorage !== "undefined")
-  //     localStorage.setItem("loginToken", loginToken);
-  // }, [loginToken]);
-
+const AuthReg: React.FC<AuthRegProps> = ({
+  setLoginToken,
+  setSaveLoginInfo,
+}) => {
   const isWidthSmaller = useHandleResize();
   const [mode, setMode] = useState<string>("login");
 
@@ -59,7 +42,10 @@ const AuthReg: React.FC<AuthRegProps> = ({ setLoginToken }) => {
   const rememberMeRef = useRef<HTMLInputElement>(null);
   const submitRef = useRef<HTMLButtonElement>(null);
 
-  const handleRememberMe = () => {};
+  const handleRememberMe = () =>
+    rememberMeRef.current
+      ? setSaveLoginInfo(rememberMeRef.current.checked)
+      : null;
 
   interface PromiseResponse {
     success: boolean;
@@ -70,7 +56,6 @@ const AuthReg: React.FC<AuthRegProps> = ({ setLoginToken }) => {
     usernameOrEmail: string,
     password: string
   ): Promise<PromiseResponse> => {
-    console.log(usernameOrEmail);
     return new Promise(async (resolve, reject) => {
       try {
         const loginResponse = await fetch(
@@ -85,7 +70,6 @@ const AuthReg: React.FC<AuthRegProps> = ({ setLoginToken }) => {
           }
         );
         const responseText = await loginResponse.text();
-        console.log("Raw Response Text:", responseText);
         if (loginResponse.ok) {
           setLoginToken(responseText);
           resolve({ success: true });
@@ -122,7 +106,6 @@ const AuthReg: React.FC<AuthRegProps> = ({ setLoginToken }) => {
           }
         );
         const responseText = await signupResponse.text();
-        console.log("Raw Response Text:", responseText);
         if (signupResponse.ok) resolve({ success: true });
         else
           reject({
@@ -143,8 +126,8 @@ const AuthReg: React.FC<AuthRegProps> = ({ setLoginToken }) => {
 
   const createToast = (
     type: string,
-    loadingMessage: string,
     message: string,
+    loadingMessage?: string,
     errorMessage?: string,
     callback?: (...args: any[]) => Promise<PromiseResponse>,
     params?: any[]
@@ -185,20 +168,20 @@ const AuthReg: React.FC<AuthRegProps> = ({ setLoginToken }) => {
     const email = emailRef.current?.value.trim();
     const password = pwdRef.current?.value.trim();
 
-    if (mode === "login" && username && password)
+    if (mode === "login" && username && password) {
       createToast(
         "promise",
-        "Logging in, please wait...",
         "Welcome back!",
+        "Logging in, please wait...",
         "Failed to log in, please try again.",
         handleBasicAuth,
         [username, password]
       );
-    else if (mode === "signup" && username && email && password) {
+    } else if (mode === "signup" && username && email && password) {
       createToast(
         "promise",
-        "Creating account, please wait...",
         "Welcome aboard!",
+        "Creating account, please wait...",
         "Failed to create your account, please try again.",
         handleBasicReg,
         [username, email, password]
@@ -206,23 +189,47 @@ const AuthReg: React.FC<AuthRegProps> = ({ setLoginToken }) => {
     } else if (mode === "forgotpwd" && email) {
       createToast(
         "promise",
-        "Sending password reset link on your email, please wait...",
         "Password reset link sent! Please check your email inbox.",
+        "Sending password reset link on your email, please wait...",
         "Failed to send OTP, please try again.",
         handleForgotPwd,
         [email]
       );
+    } else {
+      let errToastMsg: string = "";
+
+      if (!username && mode !== "forgotpwd") errToastMsg += "username";
+      if (!email && mode !== "login") {
+        if (errToastMsg) {
+          if (!password && mode !== "forgotpwd") errToastMsg += ", email";
+          else errToastMsg += " and email";
+        } else errToastMsg += "email";
+      }
+      if (!password && mode !== "forgotpwd") {
+        if (errToastMsg) errToastMsg += " and password";
+        else errToastMsg += "password";
+      }
+
+      if (errToastMsg) {
+        errToastMsg = "Please enter your " + errToastMsg + ".";
+        createToast("warning", errToastMsg);
+      }
     }
   };
 
-  const switchLoginSigup = () =>
-    mode !== "forgotpwd"
-      ? setMode((prevMode) => (prevMode === "login" ? "signup" : "login"))
-      : setMode("forgotpwd");
+  const switchLoginSigup = () => {
+    if (userNameRef.current) userNameRef.current.value = "";
+    if (emailRef.current) emailRef.current.value = "";
+    if (pwdRef.current) pwdRef.current.value = "";
+
+    if (mode !== "forgotpwd")
+      setMode((prevMode) => (prevMode === "login" ? "signup" : "login"));
+    else setMode("forgotpwd");
+  };
 
   return (
     <div className="w-screen h-screen flex items-center justify-center">
-      <form
+      <div
         className={`${
           isWidthSmaller ? "w-full" : "w-[32rem]"
         } h-max flex flex-col px-5 py-4`}>
@@ -314,7 +321,7 @@ const AuthReg: React.FC<AuthRegProps> = ({ setLoginToken }) => {
               : "Resend Code"}
           </span>
         </div>
-      </form>
+      </div>
     </div>
   );
 };

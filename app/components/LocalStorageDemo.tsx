@@ -23,7 +23,7 @@ const useHandleResize = () => {
 };
 
 interface LocalStorageDemoProps {
-  setLoginToken: Dispatch<SetStateAction<string>>;
+  setLoginToken: Dispatch<SetStateAction<string | null>>;
 }
 
 const LocalStorageDemo: React.FC<LocalStorageDemoProps> = ({
@@ -136,7 +136,7 @@ const LocalStorageDemo: React.FC<LocalStorageDemoProps> = ({
       <button
         ref={addBtnRef}
         className="px-4 py-3 bg-red-500 hover:bg-red-600 rounded-xl text-white font-semibold transition-colors absolute top-0 right-0 my-4 mx-4"
-        onClick={() => setLoginToken("")}>
+        onClick={() => setLoginToken(null)}>
         Logout
       </button>
     </div>

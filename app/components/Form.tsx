@@ -86,7 +86,6 @@ const Form: React.FC<FormProps> = ({
                     ? true
                     : false
                 }
-                required={true}
                 onKeyDown={
                   (e) =>
                     // {
